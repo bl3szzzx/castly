@@ -1,11 +1,10 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Castly</title>
+<title>Castly - Live Stream</title>
 <style>
-  /* Reset */
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
   body {
@@ -15,8 +14,6 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: flex-start;
-    min-height: 100vh;
     padding: 20px;
   }
 
@@ -32,15 +29,15 @@
 
   main {
     width: 100%;
-    max-width: 600px;
+    max-width: 700px;
     display: flex;
     flex-direction: column;
     gap: 20px;
   }
 
-  #video-section {
+  #video-section, #local-player, #remote-player {
     background-color: #333;
-    height: 300px;
+    height: 250px;
     border-radius: 10px;
     display: flex;
     align-items: center;
@@ -52,6 +49,7 @@
   #chat-section {
     background-color: #222;
     height: 200px;
+    max-height: 300px;
     border-radius: 10px;
     padding: 10px;
     overflow-y: auto;
@@ -78,31 +76,48 @@
     border-radius: 0 5px 5px 0;
     cursor: pointer;
   }
+
+  #go-live {
+    padding: 12px 20px;
+    font-size: 1rem;
+    background-color: #00cc66;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-bottom: 20px;
+  }
 </style>
 </head>
 <body>
 
 <header>
   <h1>Castly</h1>
-  <p>Live video and real time chat</p>
+  <p>Live video and real-time chat</p>
 </header>
 
 <main>
-  <div id="video-section">Live Video Placeholder</div>
-  <div id="local-player"></div>
-  <div id="remote-player"></div>
+  <button id="go-live">Go Live</button>
 
-  <div id="chat-section" id="chat-messages">
+  <div id="video-section">Click "Go Live" to start streaming</div>
+  <div id="local-player">Local Player</div>
+  <div id="remote-player">Remote Player</div>
+
+  <div id="chat-section">
     <p><em>Chat will appear here.</em></p>
   </div>
 
   <div id="chat-input">
-    <input type="text" id="message" placeholder="Type a message..." />
-    <button id="send">Send</button>
+    <input type="text" id="message" placeholder="Type a message..." aria-label="Message input" />
+    <button id="send" aria-label="Send message">Send</button>
   </div>
 </main>
 
+<!-- Agora SDK -->
+<script src="https://cdn.agora.io/sdk/release/AgoraRTC_N.js"></script>
+
 <script>
+  // Chat functionality
   const chatSection = document.getElementById('chat-section');
   const messageInput = document.getElementById('message');
   const sendButton = document.getElementById('send');
@@ -121,8 +136,59 @@
   messageInput.addEventListener('keypress', (e) => {
     if(e.key === 'Enter') sendButton.click();
   });
+
+  // Agora Live Streaming
+  const goLiveBtn = document.getElementById('go-live');
+  const localPlayer = document.getElementById('local-player');
+  const remotePlayer = document.getElementById('remote-player');
+
+  let client, localTrack;
+
+  goLiveBtn.addEventListener('click', async () => {
+    goLiveBtn.disabled = true;
+    goLiveBtn.textContent = "Live Streaming...";
+
+    // Create Agora client
+    client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
+
+    // Replace with your own Agora App ID
+    const APP_ID = "YOUR_AGORA_APP_ID";
+    const TOKEN = null; // Or generate a temporary token if you have one
+    const CHANNEL = "test";
+
+    await client.join(APP_ID, CHANNEL, TOKEN, null);
+
+    // Create local audio/video track
+    localTrack = await AgoraRTC.createCameraVideoTrack();
+    const localContainer = document.createElement("div");
+    localContainer.id = "local-video";
+    localContainer.style.width = "100%";
+    localContainer.style.height = "100%";
+    localPlayer.innerHTML = "";
+    localPlayer.appendChild(localContainer);
+
+    localTrack.play(localContainer);
+
+    await client.publish([localTrack]);
+
+    // Subscribe to remote users
+    client.on("user-published", async (user, mediaType) => {
+      await client.subscribe(user, mediaType);
+      if (mediaType === "video") {
+        const remoteContainer = document.createElement("div");
+        remoteContainer.id = `remote-${user.uid}`;
+        remoteContainer.style.width = "100%";
+        remoteContainer.style.height = "100%";
+        remotePlayer.innerHTML = "";
+        remotePlayer.appendChild(remoteContainer);
+        user.videoTrack.play(remoteContainer);
+      }
+      if (mediaType === "audio") {
+        user.audioTrack.play();
+      }
+    });
+  });
 </script>
 
 </body>
 </html>
- <script src="https://cdn.agora.io/sdk/release/AgoraRTC_N.js"></script>
