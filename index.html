@@ -33,6 +33,18 @@
     display: flex;
     flex-direction: column;
     gap: 20px;
+    align-items: center;
+  }
+
+  #go-live {
+    padding: 15px 30px;
+    font-size: 1.2rem;
+    background-color: #00cc66;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-bottom: 20px;
   }
 
   #video-section, #local-player, #remote-player {
@@ -44,6 +56,7 @@
     justify-content: center;
     color: #888;
     font-size: 1.2rem;
+    width: 100%;
   }
 
   #chat-section {
@@ -53,11 +66,12 @@
     border-radius: 10px;
     padding: 10px;
     overflow-y: auto;
+    width: 100%;
   }
 
   #chat-input {
     display: flex;
-    margin-top: 10px;
+    width: 100%;
   }
 
   #chat-input input {
@@ -75,17 +89,6 @@
     border: none;
     border-radius: 0 5px 5px 0;
     cursor: pointer;
-  }
-
-  #go-live {
-    padding: 12px 20px;
-    font-size: 1rem;
-    background-color: #00cc66;
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    margin-bottom: 20px;
   }
 </style>
 </head>
@@ -113,7 +116,6 @@
   </div>
 </main>
 
-<!-- Agora SDK -->
 <script src="https://cdn.agora.io/sdk/release/AgoraRTC_N.js"></script>
 
 <script>
@@ -148,17 +150,14 @@
     goLiveBtn.disabled = true;
     goLiveBtn.textContent = "Live Streaming...";
 
-    // Create Agora client
     client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
 
-    // Replace with your own Agora App ID
-    const APP_ID = "YOUR_AGORA_APP_ID";
-    const TOKEN = null; // Or generate a temporary token if you have one
+    const APP_ID = "YOUR_AGORA_APP_ID"; // Replace with your App ID
+    const TOKEN = null; // Or your token
     const CHANNEL = "test";
 
     await client.join(APP_ID, CHANNEL, TOKEN, null);
 
-    // Create local audio/video track
     localTrack = await AgoraRTC.createCameraVideoTrack();
     const localContainer = document.createElement("div");
     localContainer.id = "local-video";
@@ -171,7 +170,6 @@
 
     await client.publish([localTrack]);
 
-    // Subscribe to remote users
     client.on("user-published", async (user, mediaType) => {
       await client.subscribe(user, mediaType);
       if (mediaType === "video") {
